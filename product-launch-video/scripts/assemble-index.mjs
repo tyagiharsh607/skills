@@ -23,7 +23,7 @@
 // video, frames only). Durations come from STORYBOARD (audio sync-durations
 // writes them), NOT from here; this file carries only media PATHS, keyed by
 // frame number:
-//   { "bgm":   { "path": "assets/bgm/x.mp3", "volume": 0.8 } | null,
+//   { "bgm":   { "path": "assets/bgm/x.mp3", "volume": 0.12 } | null,
 //     "voices":[ { "frame": 3, "path": "assets/voice/03.wav" } ],
 //     "sfx":   [ { "frame": 3, "file": "assets/sfx/x.mp3", "offset_s": 0,
 //                  "duration_s": 1.0, "volume": 0.35 } ] }
@@ -55,6 +55,7 @@ import { parseStoryboard } from "./lib/storyboard.mjs";
 import { parseFormat } from "./lib/dimensions.mjs";
 import { stageAssets } from "./lib/assets.mjs";
 import { parseColors, semanticColors } from "./lib/tokens.mjs";
+import { bgmDefaultVolume } from "../../media-use/audio/scripts/lib/bgm.mjs";
 
 // ---------- argv ----------
 const argv = process.argv.slice(2);
@@ -67,7 +68,7 @@ function die(msg) {
   process.exit(1);
 }
 
-// Ensure the BGM track is at least `total` seconds long. HeyGen (and most music
+// Ensure the BGM track is at least `total` seconds long. Freesound (and most music
 // libraries) return a short loopable clip (~15–30s); mounting it at data-duration=total
 // would leave the video's TAIL SILENT. If the file is short, loop-extend it to `total`
 // (with a 0.4s fade-in + 1.5s fade-out) into a sibling *.loop.mp3 and return that path.
@@ -388,7 +389,9 @@ if (audio.bgm?.path) {
         `bgm is ${cov.dur?.toFixed?.(1) ?? "?"}s (< ${TOTAL}s) and could not be extended (${cov.reason}) — the tail will be silent; install ffmpeg`,
       );
     }
-    const vol = audio.bgm.volume != null ? audio.bgm.volume : voiceCount > 0 ? 0.8 : 0.9;
+    // An explicit volume from audio_meta always wins; otherwise the shared
+    // media-use default (bed ~ -18 dB under narration, forward for a silent film).
+    const vol = audio.bgm.volume != null ? audio.bgm.volume : bgmDefaultVolume(voiceCount > 0);
     body.push(
       `      <!-- BGM -->`,
       `      <audio`,
@@ -523,7 +526,7 @@ const html = `<!doctype html>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=${WIDTH}, height=${HEIGHT}" />
-    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js" integrity="sha384-sG0Hv1tP1lZCk9KQmrIbY/XNwi+OY84GQqhMscbnsoBFqAz8KNCil1kvfL3Hbbk2" crossorigin="anonymous"></script>
     <style>
 ${headStyle}
     </style>

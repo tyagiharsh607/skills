@@ -2,7 +2,7 @@
 
 The **locked narration** for a project: the final spoken lines + voice + delivery. It is an _optional_ plan-layer file — a video with no narration (bgm-only, silent overlay) has none. The storyboard's per-frame `voiceover` is the lighter, editable _guide_; `SCRIPT.md` is the _commit_. (Storyboard format → `references/storyboard-format.md`.)
 
-This file defines the SCRIPT.md **shape** only. Synthesizing the spoken lines into audio is a capability owned by `hyperframes-media` → `references/tts.md`.
+This file defines the SCRIPT.md **shape** only. Synthesizing the spoken lines into audio is a capability owned by `media-use` → `references/tts.md`.
 
 Free-form markdown — there is no strict parser; the Studio renders it read-only beside the Storyboard board, and the TTS step extracts the indented spoken lines.
 
@@ -12,7 +12,7 @@ A header block, then one section per spoken line.
 
 | Part                            | Holds                                                                                                                                   |
 | ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Header                          | `**Voice:**` (provider + voice), `**Voice settings:**` (e.g. stability / similarity / style), `**Voice direction:**` (overall delivery) |
+| Header                          | `**Voice:**` (provider + voice id, e.g. `en-US-AriaNeural (tts-mcp-server)`), `**Voice direction:**` (overall delivery) |
 | `## Line N — <label> (Frame N)` | one spoken line, tied to its storyboard frame                                                                                           |
 | `**Time:**`                     | the board's rough window — a _guide_, not authoritative (real timing comes from TTS word timestamps)                                    |
 | `**Delivery:**`                 | per-line delivery note                                                                                                                  |
@@ -23,8 +23,7 @@ A header block, then one section per spoken line.
 ```markdown
 # SCRIPT — acme-launch
 
-**Voice:** Rachel (ElevenLabs)
-**Voice settings:** stability 0.35 · similarity 0.75 · style 0.20
+**Voice:** en-US-AriaNeural (tts-mcp-server)
 **Voice direction:** Confident, warm, a little playful.
 
 ---
@@ -46,4 +45,4 @@ A header block, then one section per spoken line.
 
 ## To TTS
 
-Feed each line's spoken text to `npx hyperframes tts` (pin `--voice` / `--provider` from the header; capture word timestamps for captions). Real per-word timing replaces the `**Time:**` guides. CLI contract → `hyperframes-media/references/tts.md`.
+Feed each line's spoken text to `mcp__tts-mcp-server__generate_speech` (or `generate_batch_speech`) with the voice pinned from the header; word timestamps come from a chained Whisper `transcribe` pass (Edge TTS has no native timestamps). Real per-word timing replaces the `**Time:**` guides. Contract → `media-use/audio/references/tts.md`.

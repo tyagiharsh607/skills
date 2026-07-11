@@ -29,7 +29,7 @@ For implementation patterns (working code), see `techniques.md`. This file is th
 | 8   | **HTML-in-canvas**                                   | Live DOM as GPU texture (drawElementImage), Three.js planes, WebGL shaders on HTML, 7 VFX blocks (iPhone/MacBook device, liquid, glass, magnetic, portal, shatter, text cursor)                                                 |
 | 9   | **Three.js / WebGL custom scenes**                   | Full 3D: AnimationMixer, custom GLSL, post-processing, GLTF models, lights, cameras, materials — all deterministic via hf-seek                                                                                                  |
 | 10  | **SVG / canvas / variable fonts**                    | SVG path drawing, Canvas 2D procedural art, CSS 3D card, per-word type, variable font axes, character typing, velocity-matched cuts, MotionPath                                                                                 |
-| 11  | **Media: video, audio, TTS**                         | Video compositing + frame injection, audio mixer (multi-track), Kokoro TTS (54 voices, 9 languages), Whisper/Groq/OpenAI transcription, background removal (u2net)                                                              |
+| 11  | **Media: video, audio, TTS**                         | Video compositing + frame injection, audio mixer (multi-track), tts-mcp-server TTS (Microsoft Edge TTS, hundreds of voices/languages), Whisper/Groq/OpenAI transcription, background removal (u2net)                            |
 | 12  | **Registry (51 blocks + 4 components + 8 examples)** | Social overlays (8), showcases (5), data viz (2), logo branding (1), 3D/VFX (7), shader transitions (14), transition galleries (13), components (grain, shimmer, pixelate, texture-mask), 8 starter examples                    |
 | 13  | **CLI (25 commands)**                                | init, add, catalog, play, preview, publish, render (MP4/WebM/MOV/PNG, HDR, GPU, parallel), lint, validate, inspect, snapshot, capture, tts, transcribe, remove-background, doctor, and more                                     |
 | 14  | **Linter (60+ rules)**                               | Core, media, GSAP, captions, composition, adapters, textures, fonts — plus async URL checks                                                                                                                                     |
@@ -367,14 +367,12 @@ window.addEventListener("hf-seek", (e) => {
 - Master audioGain from EngineConfig
 - Output: AAC 192kbps
 
-### TTS (Kokoro-82M, local)
+### TTS (tts-mcp-server, Microsoft Edge TTS)
 
-- 54 bundled voices with prefixes: `a` American EN, `b` British EN, `e` Spanish, `f` French, `h` Hindi, `i` Italian, `j` Japanese, `p` Brazilian Portuguese, `z` Mandarin
-- Default voice: `af_heart`
-- Speed: 0.1–3.0 (default 1.0)
-- Languages: en-us, en-gb, es, fr-fr, hi, it, pt-br, ja, zh (non-EN needs system espeak-ng)
-- Output: WAV; no pitch/volume CLI flags
-- No API key required
+- Hundreds of voices across many languages — `mcp__tts-mcp-server__list_available_voices` for the full catalog, `get_popular_voices` for a curated shortlist
+- Default voice: `en-US-AriaNeural`
+- Output: MP3
+- No API key required, no sign-in
 
 ### Transcription
 
@@ -667,7 +665,7 @@ Control bridge actions: play, pause, seek, set-muted, set-playback-rate, enable-
 | ------------------------- | ----------------------------------------------------------------------- |
 | hyperframes               | Core framework skill (composition authoring)                            |
 | hyperframes-cli           | All CLI commands as an agent skill                                      |
-| hyperframes-media         | Media workflows (TTS, transcribe, captions integration)                 |
+| media-use                 | Media workflows (TTS, transcribe, captions integration)                 |
 | hyperframes-registry      | Installing blocks/components                                            |
 | hyperframes-contrast      | WCAG audit (scripts/contrast-report.mjs)                                |
 | hyperframes-animation-map | Per-tween bbox + flags report                                           |

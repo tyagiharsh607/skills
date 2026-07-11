@@ -1,17 +1,27 @@
 #!/usr/bin/env node
-// audio.mjs — faceless-explainer audio ADAPTER. The TTS / BGM / SFX implementation
-// no longer lives here: it is the shared engine at
-// ../../hyperframes-media/scripts/audio.mjs. This file only (a) maps the
-// frame model (SCRIPT.md frames + STORYBOARD.md music/sfx) into the
+// audio.mjs — audio ADAPTER (reuses the product-launch SCRIPT.md / STORYBOARD.md
+// model; this file is intentionally identical across the reusing skills). The
+// TTS / BGM / SFX implementation no longer lives here: it is the shared engine
+// at ../../media-use/audio/scripts/audio.mjs. This file only (a) maps the
+// product-launch model (SCRIPT.md frames + STORYBOARD.md music/sfx) into the
 // engine's neutral audio_request.json, (b) converts the engine's id-keyed
 // audio_meta back into the frame-keyed shape captions.mjs / assemble-index.mjs
 // already consume, and (c) keeps the local `sync-durations` pass (it rewrites
-// STORYBOARD.md, which is this skill's concern).
+// STORYBOARD.md, which is product-launch-specific).
+//
+// IMPORTANT: the engine only INGESTS audio — it does not synthesize or
+// download anything itself. Before running this script's default (generate)
+// mode, the calling agent must already have:
+//   - called tts-mcp-server (generate_speech / generate_batch_speech) to write
+//     assets/voice/<pad2(frame)>.mp3 for every SCRIPT.md frame with narration
+//   - called freesound-music (search_freesound_music → download_freesound_music)
+//     to write assets/bgm/track.mp3, if a music bed is wanted
+// See ../../media-use/audio/references/tts.md and .../bgm.md.
 //
 // Three modes (unchanged CLI surface):
-//   (default) generate — engine --only tts,bgm. BGM mode is "retrieve" (strict:
-//        no HeyGen credential ⇒ skip, never a detached generate, since this
-//        workflow has no wait-bgm step). Runs in the background during Step 4.
+//   (default) generate — engine --only tts,bgm. BGM mode is "retrieve"
+//        (Freesound is retrieval-only; fully synchronous, no wait-bgm step).
+//        Run after the MCP generation calls above have completed.
 //   sync-durations — write real voice durations into STORYBOARD.md (local).
 //   fetch-sfx      — engine --only sfx, merged into the existing meta (Step 5,
 //        after the frames' `sfx:` cues exist).
@@ -27,7 +37,7 @@ import { fileURLToPath } from "node:url";
 import { parseStoryboard } from "./lib/storyboard.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
-const DEFAULT_ENGINE = join(HERE, "..", "..", "hyperframes-media", "scripts", "audio.mjs");
+const DEFAULT_ENGINE = join(HERE, "..", "..", "media-use", "audio", "scripts", "audio.mjs");
 
 const flag = (argv, name, def) => {
   const i = argv.indexOf(`--${name}`);
@@ -86,9 +96,9 @@ function runEngine({ request, hyperframesDir, neutral, only, extra = [] }, die) 
   if (r.status !== 0) die(`media audio engine exited ${r.status}`);
 }
 
-// Engine neutral meta (id-keyed) → frame-keyed meta consumed by
+// Engine neutral meta (id-keyed) → product-launch meta (frame-keyed) consumed by
 // captions.mjs / assemble-index.mjs. id is the zero-padded frame number.
-function toFrameKeyedMeta(neutral) {
+function toProductLaunchMeta(neutral) {
   const voices = (neutral.voices ?? []).map((v) => ({
     frame: Number(v.id),
     path: v.path,
@@ -123,7 +133,6 @@ function runGenerate(argv) {
   const storyboardPath = resolve(flag(argv, "storyboard", join(hyperframesDir, "STORYBOARD.md")));
   const scriptPath = resolve(flag(argv, "script", join(hyperframesDir, "SCRIPT.md")));
   const outPath = resolve(flag(argv, "out", join(hyperframesDir, "audio_meta.json")));
-  const userVoice = flag(argv, "voice", null);
   const speed = Number(flag(argv, "speed", "1.0")) || 1.0;
 
   if (!existsSync(storyboardPath)) die(`STORYBOARD.md not found at ${storyboardPath}`);
@@ -139,20 +148,18 @@ function runGenerate(argv) {
   if (!lines.length) console.error("· no SCRIPT.md — silent film (BGM only)");
 
   // BGM mood: storyboard `music:` → message → arc → default. `mode: retrieve` is
-  // strict here (no wait-bgm step downstream).
+  // the only mode (Freesound is retrieval-only) — fully synchronous.
   const query = (g.extra && g.extra.music) || g.message || g.arc || "calm cinematic underscore";
   const request = {
-    provider: "auto",
     speed,
     lines,
-    bgm: { mode: "retrieve", query, blob: g.message || "", arc: g.arc || "" },
+    bgm: { mode: "retrieve", query },
   };
-  if (userVoice) request.voice = userVoice;
 
   const neutral = neutralPath(outPath);
   runEngine({ request, hyperframesDir, neutral, only: "tts,bgm" }, die);
 
-  const meta = toFrameKeyedMeta(JSON.parse(readFileSync(neutral, "utf8")));
+  const meta = toProductLaunchMeta(JSON.parse(readFileSync(neutral, "utf8")));
   writeFileSync(outPath, JSON.stringify(meta, null, 2));
   console.log(
     `✓ audio generate: ${meta.voices.length} voice + ${meta.bgm ? "1 bgm" : "no bgm"} → ${outPath}`,
@@ -189,7 +196,7 @@ function runFetchSfx(argv) {
   // voices/bgm written by the earlier generate (--only tts,bgm) pass are preserved.
   runEngine({ request, hyperframesDir, neutral, only: "sfx" }, die);
 
-  const meta = toFrameKeyedMeta(JSON.parse(readFileSync(neutral, "utf8")));
+  const meta = toProductLaunchMeta(JSON.parse(readFileSync(neutral, "utf8")));
   writeFileSync(outPath, JSON.stringify(meta, null, 2));
   console.log(`✓ audio fetch-sfx: ${meta.sfx.length} SFX cue(s) → ${outPath}`);
 }

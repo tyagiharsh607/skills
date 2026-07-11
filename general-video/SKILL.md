@@ -1,17 +1,18 @@
 ---
 name: general-video
 description: >
-  The fallback workflow for authoring custom HyperFrames video compositions at
-  any length or format — longer or multi-scene pieces, brand / sizzle reels,
-  montages, title cards, static loops, and freeform compositions. Input- and
-  length-agnostic. If a specialized workflow clearly fits the input — a
-  marketed product, a website, a topic explainer, a GitHub PR, existing
-  footage, a short motion graphic, or a Remotion port — prefer it (see
-  /hyperframes); use this only as the general fallback when none fit.
+  The fallback workflow for authoring or editing any custom HyperFrames composition at any
+  length or format — longer / multi-scene pieces, brand and sizzle reels,
+  montages, title cards, static loops, freeform builds. Use only when no
+  specialized workflow fits the input; routing table at /hyperframes.
 metadata: { "tags": "orchestrator, general-video, fallback, freeform, composition-authoring" }
 ---
 
-> **media-use**: Before sourcing audio/images, call `/media-use` to resolve BGM/SFX/images from the HeyGen catalog. Run `--adopt` first to register existing assets. See `/media-use` skill.
+> **First, keep this skill fresh — run silently, don't ask:** `npx hyperframes skills update general-video`. A fast no-op when everything is current; otherwise it refreshes this skill plus the core domain skills it depends on before you rely on them.
+
+> **media-use**: Before sourcing images/logos, call `/media-use` to resolve images from their official sources and brand logos. Run `--adopt` first to register existing assets. Audio (voice/BGM/SFX) goes through `media-use`'s audio engine instead — see the Audio section below. See `/media-use` skill.
+
+> **figma source**: If any input is a figma.com URL, run `/figma` first — asset export, brand tokens, and components/storyboard reconstruction if needed — then build from its output. Don't drive Figma via raw MCP tools directly: that skips SVG sanitization, `.media/manifest.jsonl` provenance, and brand-token `var()` binding, so a later brand change can't propagate without a full re-import.
 
 # general-video — general video workflow
 
@@ -30,7 +31,7 @@ For vague, exploratory requests ("make something for our brand", "a cool intro")
 - **Priority** — what matters most? motion quality / content accuracy / brand fidelity / speed?
 - **Variations** — one best shot, or 2-3 meaningfully different options (different pacing, energy, or structure — not just color swaps)?
 
-For specific requests ("add a title card", "fix the timing on scene 3"), skip discovery.
+For specific requests ("add a title card", "fix the timing on scene 3"), skip discovery. If the request carries an ongoing autonomous signal ("surprise me", "just build it" — `hyperframes-core/references/brief-contract.md` § 1), skip discovery too: default to one best shot and state your calls with one-line receipts as you make them.
 
 ### Step 1 — Design system → `hyperframes-creative`
 
@@ -56,7 +57,7 @@ Run for every multi-scene composition (skip for single-scene pieces and trivial 
 
 Before writing HTML, think at a high level:
 
-1. **What** — the viewer experience: narrative arc, key moments, emotional beats.
+1. **What** — the viewer experience: narrative arc, key moments, emotional beats. For a narrated story piece, follow `hyperframes-creative/references/story-spine.md` — hook in viewer-outcome language, the message landing by beat 2, evidence after.
 2. **Structure** — how many compositions, sub-comp vs inline, which tracks carry video / audio / overlays / captions. For the monolithic-single-file vs modular-sub-comp call, see `hyperframes-core/references/composition-patterns.md` § Two Architectures (rule of thumb: ≥3 hard scene cuts, or any reused scene → modularize; a short single-scene piece stays one file).
 3. **Rhythm** — name the pattern before implementing (e.g. `fast-fast-SLOW-SHADER-hold`); see `hyperframes-creative/references/beat-direction.md`.
 4. **Timing** — which clips drive duration, where transitions land, the pacing.
@@ -96,42 +97,48 @@ Never use `position: absolute; top: Npx` on a content container — it overflows
 
 ## Build — delegate to the domain skills
 
-This maps the skill's full surface (see the `description`) to its references — non-exhaustive; when an intent isn't listed, route through `hyperframes-creative` (look/concept), `hyperframes-animation` (motion), `hyperframes-core` (contract), `hyperframes-media` (audio/captions). **The first row is ADDITIVE — read it AND your intent row, not one or the other.**
+This maps the skill's full surface (see the `description`) to its references — non-exhaustive; when an intent isn't listed, route through `hyperframes-creative` (look/concept), `hyperframes-animation` (motion), `hyperframes-core` (contract), `media-use` (audio/captions). **The first row is ADDITIVE — read it AND your intent row, not one or the other.**
 
-| Building…                                                             | Read first (in order)                                                                                                                                                                                |
-| --------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **ALWAYS — every non-trivial piece, on top of your intent row below** | `hyperframes-creative/references/house-style.md` + `references/video-composition.md` (also gated in Step 1 / HARD-GATE; the "produced, not generated" foreground detailing)                          |
-| **Kinetic typography / text-forward**                                 | `hyperframes-animation/techniques.md` (kinetic type) + `adapters/gsap-easing-and-stagger.md` + `rules/kinetic-beat-slam.md`                                                                          |
-| **Title card / lower-third / overlay / PiP / text-behind-subject**    | `hyperframes-creative/references/composition-patterns.md` + (for the centered/sized frame) `hyperframes-core` → "Root must be sized"                                                                 |
-| **Logo / brand-mark reveal**                                          | `hyperframes-animation/rules/svg-path-draw.md` (draw-on) + `rules/3d-text-depth-layers.md` + `rules/scale-swap-transition.md`                                                                        |
-| **Data / stats / numbers**                                            | `hyperframes-animation/rules/counting-dynamic-scale.md` + `rules/stat-bars-and-fills.md` + `hyperframes-creative/references/data-in-motion.md`                                                       |
-| **Product / app / UI demo**                                           | `hyperframes-animation/rules/3d-page-scroll.md` + `rules/cursor-click-ripple.md` + `rules/press-release-spring.md`                                                                                   |
-| **Audio-reactive / music-driven**                                     | `hyperframes-creative/references/audio-reactive.md` (pre-extract bands; map to motion)                                                                                                               |
-| **Narrated / voiceover / music / SFX / captions**                     | `hyperframes-media` → the shared audio engine `scripts/audio.mjs` (one call = TTS + BGM + SFX → `audio_meta.json`); caption authoring + asset placement via `hyperframes-core`. See **Audio** below. |
-| **Multi-scene / transitions**                                         | `hyperframes-animation/transitions/overview.md` **then** `transitions/catalog.md` (you are not done after the overview — the GSAP recipe is in the catalog)                                          |
-| **Modular / sub-compositions**                                        | `hyperframes-core/references/composition-patterns.md` + `references/sub-compositions.md`                                                                                                             |
+| Building…                                                             | Read first (in order)                                                                                                                                                                        |
+| --------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **ALWAYS — every non-trivial piece, on top of your intent row below** | `hyperframes-creative/references/house-style.md` + `references/video-composition.md` (also gated in Step 1 / HARD-GATE; the "produced, not generated" foreground detailing)                  |
+| **Kinetic typography / text-forward**                                 | `hyperframes-animation/techniques.md` (kinetic type) + `adapters/gsap-easing-and-stagger.md` + `rules/kinetic-beat-slam.md`                                                                  |
+| **Title card / lower-third / overlay / PiP / text-behind-subject**    | `hyperframes-creative/references/composition-patterns.md` + (for the centered/sized frame) `hyperframes-core` → "Root must be sized"                                                         |
+| **Logo / brand-mark reveal**                                          | `hyperframes-animation/rules/svg-path-draw.md` (draw-on) + `rules/3d-text-depth-layers.md` + `rules/scale-swap-transition.md`                                                                |
+| **Data / stats / numbers**                                            | `hyperframes-animation/rules/counting-dynamic-scale.md` + `rules/stat-bars-and-fills.md` + `hyperframes-creative/references/data-in-motion.md`                                               |
+| **Product / app / UI demo**                                           | `hyperframes-animation/rules/3d-page-scroll.md` + `rules/cursor-click-ripple.md` + `rules/press-release-spring.md`                                                                           |
+| **Audio-reactive / music-driven**                                     | `hyperframes-creative/references/audio-reactive.md` (pre-extract bands; map to motion)                                                                                                       |
+| **Narrated / voiceover / music / SFX / captions**                     | `media-use` → the shared audio engine `scripts/audio.mjs` (one call = TTS + BGM + SFX → `audio_meta.json`); caption authoring + asset placement via `hyperframes-core`. See **Audio** below. |
+| **Multi-scene / transitions**                                         | `hyperframes-animation/transitions/overview.md` **then** `transitions/catalog.md` (you are not done after the overview — the GSAP recipe is in the catalog)                                  |
+| **Modular / sub-compositions**                                        | `hyperframes-core/references/composition-patterns.md` + `references/sub-compositions.md`                                                                                                     |
 
 ### Audio: one engine (TTS · BGM · SFX)
 
-Only when the piece calls for it (per "build exactly what was asked" — no ambient music on a title card). Don't hand-roll TTS or vendor a copy: write a neutral `audio_request.json` and call the shared engine in `hyperframes-media`. It auto-degrades on one switch — HeyGen credential present → HeyGen TTS + music/SFX **retrieval**; absent → ElevenLabs/Kokoro TTS, Lyria/MusicGen BGM **generation**, and the bundled SFX library. Full flag list + request/meta schema: the header comment of `hyperframes-media/scripts/audio.mjs`.
+Only when the piece calls for it (per "build exactly what was asked" — no ambient music on a title card). Don't hand-roll TTS or vendor a copy: generate the raw files via MCP tools, write a neutral `audio_request.json`, then call the shared engine in `media-use` to ingest. No sign-in or credential needed — both providers are free:
+
+1. **Narration** — call `mcp__tts-mcp-server__generate_speech` / `generate_batch_speech` for each line, writing to `assets/voice/<id>.mp3`.
+2. **Music** — if wanted, call `mcp__freesound-music__search_freesound_music` (short concrete mood query) → pick a CC0 result → `mcp__freesound-music__download_freesound_music` to `assets/bgm/track.mp3`.
+3. **SFX** — always resolved from the bundled local library; no MCP call needed.
+4. **Ingest** — run the engine to probe durations, chain Whisper for word timing, and assemble `audio_meta.json`. Full flag list + request/meta schema: the header comment of `media-use/audio/scripts/audio.mjs`.
 
 ```jsonc
-// audio_request.json — one line per narrated segment; `id` is yours (joins audio_meta back)
+// audio_request.json — one line per narrated segment; `id` is yours (joins audio_meta back),
+// and must match the filename used when generating each line's audio (assets/voice/<id>.mp3)
 {
   "lines": [
     { "id": "s1", "text": "Your opening line.", "sfx": ["whoosh"] },
     { "id": "s2", "text": "The next beat." },
   ],
-  "bgm": { "query": "calm cinematic underscore" }, // omit "mode" → auto (retrieve if HeyGen, else generate); "none" to disable
+  "bgm": { "query": "calm cinematic underscore" }, // omit "mode" → retrieve (default); "none" to disable
 }
 ```
 
 ```bash
-# <MEDIA_DIR> = the installed hyperframes-media skill dir (sibling of this skill)
+# <MEDIA_DIR> = the installed media-use skill dir (sibling of this skill)
 node <MEDIA_DIR>/scripts/audio.mjs --request ./audio_request.json --hyperframes . --out ./audio_meta.json
 ```
 
-Then read `audio_meta.json`: mount each `voices[].path` + (`bgm.path`, `sfx[]`) as `<audio>` tracks and use `voices[].words` for captions, all per `hyperframes-core` (audio tracks + caption authoring). If BGM took the generate path (`bgm_pending: true`), run `hyperframes-media/scripts/wait-bgm.mjs` before final render.
+Then read `audio_meta.json`: mount each `voices[].path` + (`bgm.path`, `sfx[]`) as `<audio>` tracks and use `voices[].words` for captions, all per `hyperframes-core` (audio tracks + caption authoring). If BGM took the generate path (`bgm_pending: true`), run `media-use/audio/scripts/wait-bgm.mjs` before final render.
 
 ## Output checklist → `hyperframes-cli`
 

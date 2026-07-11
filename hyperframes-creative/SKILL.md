@@ -29,28 +29,31 @@ For motion patterns, scene blueprints, transitions, and CSS marker effects, use 
 
 ## Routing
 
-| Topic                                                                    | Read                                           |
-| ------------------------------------------------------------------------ | ---------------------------------------------- |
-| Adopt a ready-made frame-preset as `frame.md` (optional)                 | `frame-presets/` · `references/design-spec.md` |
-| Default palettes, motion, typography, lazy defaults to question          | `references/house-style.md`                    |
-| Named style presets, mood-to-style routing                               | `references/visual-styles.md`                  |
-| Palette-specific color tokens                                            | `palettes/*.md`                                |
-| Composition patterns — PiP, text-behind-subject, title card, slide show  | `references/composition-patterns.md`           |
-| Stats / infographic presentation                                         | `references/data-in-motion.md`                 |
-| Structured expansion for open-ended prompts                              | `references/prompt-expansion.md`               |
-| Video-medium density, scale, color, frame composition                    | `references/video-composition.md`              |
-| Per-beat direction, rhythm planning, transition timing                   | `references/beat-direction.md`                 |
-| Post-authoring spec verification (colors, type, corners, spacing, depth) | `references/design-adherence.md`               |
-| High-level motion guardrails and GSAP-quality rules                      | `references/motion-principles.md`              |
-| Font selection, pairings, rendered-video type guardrails                 | `references/typography.md`                     |
-| Script pacing, tone, openings, number pronunciation                      | `references/narration.md`                      |
-| Precomputed audio bands mapped to motion                                 | `references/audio-reactive.md`                 |
+| Topic                                                                         | Read                                           |
+| ----------------------------------------------------------------------------- | ---------------------------------------------- |
+| Adopt a ready-made frame-preset as `frame.md` (optional)                      | `frame-presets/` · `references/design-spec.md` |
+| Default palettes, motion, typography, lazy defaults to question               | `references/house-style.md`                    |
+| Named style presets, mood-to-style routing                                    | `references/visual-styles.md`                  |
+| Palette-specific color tokens                                                 | `palettes/*.md`                                |
+| Composition patterns — PiP, text-behind-subject, title card, slide show       | `references/composition-patterns.md`           |
+| Stats / infographic presentation                                              | `references/data-in-motion.md`                 |
+| Structured expansion for open-ended prompts                                   | `references/prompt-expansion.md`               |
+| Video-medium density, scale, color, frame composition                         | `references/video-composition.md`              |
+| Per-beat direction, rhythm planning, transition timing                        | `references/beat-direction.md`                 |
+| Post-authoring spec verification (colors, type, corners, spacing, depth)      | `references/design-adherence.md`               |
+| High-level motion guardrails and GSAP-quality rules                           | `references/motion-principles.md`              |
+| Font selection, pairings, rendered-video type guardrails                      | `references/typography.md`                     |
+| Story doctrine — hook language, value-before-evidence, storyboard-as-proposal | `references/story-spine.md`                    |
+| Script pacing, tone, openings, number pronunciation                           | `references/narration.md`                      |
+| Precomputed audio bands mapped to motion                                      | `references/audio-reactive.md`                 |
 
 ## Scripts
 
 - `scripts/contrast-report.mjs` — inspect contrast warnings from rendered frames.
 - `scripts/extract-audio-data.py` — pre-extract audio bands for audio-reactive compositions.
 - `scripts/package-loader.mjs` — support script for bundled creative tooling.
+
+`contrast-report.mjs` resolves helper packages from the current project first, then can bootstrap the bundled HyperFrames package version. Set `HYPERFRAMES_SKILL_PKG_VERSION=<version>` only when running the skill outside the bundled CLI/skill install and you need to pin that bootstrap version explicitly.
 
 Run from the repo root with explicit paths, for example:
 

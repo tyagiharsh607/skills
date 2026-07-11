@@ -6,15 +6,9 @@ Skip the TTS sections below. The storyboard already has beat durations planned b
 
 **Background music:** Ask the user before moving to Step 5:
 
-> "Do you have a music track for this video? If not, I can suggest where to find one:
->
-> - **Artlist.io** or **Musicbed** — licensed music for commercial use
-> - **Uppbeat.io** or **Pixabay Music** — free tracks with attribution
-> - **Freesound.org** — free samples and loops
->
-> Or share a reference track ('something like this') and I can find something similar."
+> "Do you have a music track for this video? If not, I can search Freesound's free CC0 catalog for one, or you can share a reference track ('something like this') and I'll find something similar."
 
-If the user provides a track: note the file path and BPM in the storyboard for Step 5 to wire into `index.html`. If they skip music entirely, the video uses SFX only — confirm that's intentional.
+If the user provides a track: note the file path and BPM in the storyboard for Step 5 to wire into `index.html`. If they want one sourced: call `mcp__freesound-music__search_freesound_music` with a short concrete mood query, pick a CC0 result, then `mcp__freesound-music__download_freesound_music` it. If they skip music entirely, the video uses SFX only — confirm that's intentional.
 
 Move to Step 5.
 
@@ -22,13 +16,13 @@ Move to Step 5.
 
 ## Generate a test clip before full narration — calibrate timing first
 
-Generate a 2-sentence test clip NOW using the script's opening lines. Measure the actual duration. Kokoro compresses scripts by ~40% (35s planned → 19s actual) and HeyGen runs faster than expected. If you discover the audio is 40% shorter than expected, you'll need to revise the storyboard beat timings before investing time in full narration generation.
+Generate a 2-sentence test clip NOW using the script's opening lines. Measure the actual duration. TTS engines commonly compress scripts relative to a naive words-per-second estimate. If you discover the audio is significantly shorter or longer than expected, you'll need to revise the storyboard beat timings before investing time in full narration generation.
 
 **Do this before committing to beat count and durations:**
 
-```bash
-# Quick Kokoro test (2 sentences):
-npx hyperframes tts "First sentence. Second sentence." --voice af_nova --output /tmp/test-tts.wav
+```
+# Quick test (2 sentences) via the MCP tool:
+generate_speech(text: "First sentence. Second sentence.", voice: "en-US-AriaNeural", output_path: "/tmp/test-tts.mp3")
 # Measure: seconds ÷ words × total script words = estimated full audio length
 ```
 
@@ -44,91 +38,29 @@ The script formula assumes constant words-per-second, but punctuation, dramatic 
 
 **Always ask about background music** — even when narration is present:
 
-> "Do you want background music under the narration? (Artlist.io, Musicbed for licensed; Uppbeat/Pixabay for free; or share a reference track). Even a subtle ambient underscore makes pauses between sentences feel intentional rather than empty."
+> "Do you want background music under the narration? I can search Freesound's free CC0 catalog for a mood that fits, or you can share a reference track. Even a subtle ambient underscore makes pauses between sentences feel intentional rather than empty."
 
-If they want music, note the track in the storyboard for Step 5 to wire into `index.html`.
+If they want music sourced: call `mcp__freesound-music__search_freesound_music` with a short concrete mood query, pick a CC0 result, then `mcp__freesound-music__download_freesound_music` it. Note the track in the storyboard for Step 5 to wire into `index.html`. No sign-in or credential needed — Freesound's CC0 catalog is free, no attribution required.
 
-## TTS Provider
+## TTS
 
-Ask the user which voice provider they'd like:
+Narration is generated via `tts-mcp-server` (Microsoft Edge TTS) — free, no API key, no sign-in.
 
-> **Which voice provider would you like to use for narration?**
->
-> 1. **HeyGen TTS** — Good quality voices, and it returns word-level timestamps automatically (saves a separate transcription step). Requires HeyGen API key.
-> 2. **ElevenLabs** — Large voice library, very natural output. Requires ElevenLabs API key. Does not return word timestamps — you'll transcribe separately.
-> 3. **Kokoro** (Free) — Runs locally, no API key needed. Decent quality but more robotic than the others. Good for drafts or budget runs.
+Pick a voice before generating:
 
-If the user picks ElevenLabs or HeyGen and doesn't have a key set up yet, help them:
-
-- **ElevenLabs:** "Add `ELEVENLABS_API_KEY=your-key` to a `.env` file in the project root, or just paste it here and I'll set it up."
-- **HeyGen:** "Add `HEYGEN_API_KEY=your-key` to a `.env` file, or paste it here."
-
-Don't judge or critique if the user pastes a key directly in chat — just use it and move on.
+- `mcp__tts-mcp-server__get_popular_voices` — a curated shortlist by language/gender, good for picking quickly.
+- `mcp__tts-mcp-server__list_available_voices` — the full catalog (hundreds of voices, many languages) if you want something specific.
 
 ## Audition voices
 
-After the provider is selected, audition at least 2 voices with the first sentence of SCRIPT.md.
+Audition at least 2 voices with the first sentence of `SCRIPT.md` before committing:
 
-**ElevenLabs:**
-
-- If the ElevenLabs MCP is available: use `mcp__elevenlabs__search_voices` to browse, `mcp__elevenlabs__text_to_speech` to generate.
-- If no MCP: call the REST API directly:
-
-  ```bash
-  # List voices
-  curl -s "https://api.elevenlabs.io/v1/voices" \
-    -H "xi-api-key: $ELEVENLABS_API_KEY" | jq '.voices[:5] | .[].name'
-
-  # Generate speech (replace VOICE_ID with chosen voice)
-  curl -s -X POST "https://api.elevenlabs.io/v1/text-to-speech/VOICE_ID" \
-    -H "xi-api-key: $ELEVENLABS_API_KEY" \
-    -H "Content-Type: application/json" \
-    -d '{"text":"First sentence of your script","model_id":"eleven_multilingual_v2"}' \
-    --output narration.mp3
-  ```
-
-- Does not return word timestamps — transcribe separately after generating.
-
-**HeyGen TTS:**
-
-- If the HeyGen MCP is available: use the TTS tool directly.
-- If no MCP: use the v3 API (current; v1/v2 deprecated, supported until Oct 2026). **Auth depends on credential type:** the `x-api-key` header below works only with an **account API key** (`HEYGEN_API_KEY`). If you authenticated via **OAuth** (e.g. claude.ai / the HeyGen MCP login), `x-api-key` will 401 — send `Authorization: Bearer $HEYGEN_OAUTH_TOKEN` instead, or just use the MCP TTS tool above.
-
-  ```bash
-  # List voices — response shape: { "data": [...], "has_more": bool }
-  # data is a direct list (NOT data.voices — that was v2)
-  curl -s "https://api.heygen.com/v3/voices?engine=starfish&type=public&limit=20" \
-    -H "x-api-key: $HEYGEN_API_KEY" | python3 -c \
-    "import json,sys; v=json.load(sys.stdin)['data']; [print(x['voice_id'], x['name'], x['language']) for x in v[:10]]"
-
-  # Generate audio — response: { "data": { "audio_url": ..., "word_timestamps": [...] } }
-  curl -s -X POST "https://api.heygen.com/v3/voices/speech" \
-    -H "x-api-key: $HEYGEN_API_KEY" \
-    -H "Content-Type: application/json" \
-    -d '{"text":"Your script here","voice_id":"VOICE_ID","speed":1.0}' \
-    | python3 -c "
-  import json,sys
-  r=json.load(sys.stdin)
-  d=r['data']
-  print(d['audio_url'])
-  open('transcript_raw.json','w').write(json.dumps(d.get('word_timestamps',[]),indent=2))
-  "
-
-  # Then download the audio
-  curl -sL "AUDIO_URL_FROM_ABOVE" --output narration.mp3
-  ```
-
-- Returns word-level timestamps directly in the response — no separate transcription step needed.
-
-**Kokoro (free, local):**
-
-```bash
-npx hyperframes tts SCRIPT.md --voice af_nova --output narration.wav
+```
+generate_speech(text: "<first sentence of SCRIPT.md>", voice: "en-US-AriaNeural", output_path: "/tmp/audition-1.mp3")
+generate_speech(text: "<first sentence of SCRIPT.md>", voice: "en-US-GuyNeural", output_path: "/tmp/audition-2.mp3")
 ```
 
-No API key, no MCP needed. Runs locally. Use `--list` to see all 54 available voices.
-
-Pick the voice that sounds most natural and conversational. Listen for pacing — does it breathe between sentences? Does it sound like a person or a robot?
+Pick the voice that sounds most natural and conversational for the content type. Listen for pacing — does it breathe between sentences? Does it sound like a person or a robot?
 
 ## Script length check
 
@@ -138,47 +70,32 @@ The key check: are there stretches where NOTHING is happening — no narration A
 
 ## Generate full narration
 
-Generate the full script as `narration.wav` (or `.mp3`) in the project directory.
+Generate the full script as `narration.mp3` in the project directory, via `mcp__tts-mcp-server__generate_speech` (single file) or `generate_batch_speech` (if splitting into per-scene segments).
 
 **If any command hangs for more than 60 seconds — don't just wait.** The user is sitting there watching you do nothing. Escalation order:
 
-1. **Try again** — kill the process, run the same command again (transient failures are common)
-2. **Try different flags** — smaller model (`--model tiny.en`), different voice, shorter test sentence first
+1. **Try again** — the same call again (transient failures are common)
+2. **Try a shorter test sentence first**, then scale back up
 3. **Try a different tool for the same task** — if `hyperframes transcribe` hangs, run `whisper-cli` directly on the audio
-4. **Switch provider entirely** — if ElevenLabs is down, try HeyGen or Kokoro. If Kokoro hangs, try ElevenLabs.
 
 Never sit idle for 10 minutes hoping a stuck process will finish.
 
-**Kokoro pronunciation issues:** Kokoro mispronounces product names and tech terms. Always apply substitutions before generating. Known problems and fixes:
+**Pronunciation issues:** neural TTS engines commonly mispronounce product names, acronyms, and unusual tech terms. Always apply substitutions before generating a full narration — test the first 2 sentences and listen:
 
 - `API` → `A P I` (spell it out)
 - `UI` → `U I`, `SaaS` → `sass`, `DevOps` → `dev ops`
-- Product names with unusual spelling: test the first sentence first and listen. Common failure: "Vercel" → "versatile", "WorkOS" → "work O S", "One API" → "Wanna PI"
+- Product names with unusual spelling: test the first sentence and listen for mispronunciations
 - If a name sounds wrong: write it phonetically in `narration.txt` (e.g., `Vercel` → `Ver-sell`, `Supabase` → `Soopa-base`)
-- Always generate a short test clip with the first 2 sentences before generating the full audio
-- **No SSML tags** — Kokoro reads them as literal text. `<break time="1s"/>` is spoken as "break time equals one slash." Use blank lines or `...` for pauses in `narration.txt`
-
-For ElevenLabs and HeyGen TTS, substitutions are usually unnecessary — they handle product names correctly.
+- **No SSML tags** — the MCP tool takes plain text; `<break time="1s"/>` will be spoken literally. Use blank lines or `...` for pauses in `narration.txt`
 
 **Also save the exact spoken text** — with pronunciation substitutions applied (e.g., `API` → `A P I`, `$2T` → `two trillion` and etc.) — as `narration.txt` in the same directory. This is the string passed to TTS, distinct from `SCRIPT.md` which is the human-readable creative doc. Having `narration.txt` makes it trivial to regenerate the audio later with a different voice without re-deriving the substitutions. Name it exactly `narration.txt`.
 
 ## Transcribe for word-level timestamps
 
-**If you used HeyGen v3 TTS:** word timestamps were returned in the generate call. Normalize the format before saving — HeyGen v3 uses `word` but the pipeline expects `text`:
-
-```python
-import json
-raw = json.load(open('transcript_raw.json'))
-normalized = [{"text": w["word"], "start": w["start"], "end": w["end"]} for w in raw]
-json.dump(normalized, open('transcript.json', 'w'), indent=2)
-```
-
-No separate transcription step needed.
-
-**If you used ElevenLabs or Kokoro:**
+`tts-mcp-server` doesn't return word-level timestamps, so this is always required:
 
 ```bash
-npx hyperframes transcribe narration.wav
+npx hyperframes transcribe narration.mp3
 ```
 
 Produces `transcript.json` with `[{ text, start, end }]` for every word. These timestamps are the source of truth for all beat durations.
@@ -208,7 +125,7 @@ delta = |real_total - planned_total|
 
 **If delta > 15% of planned total — do not proceed to Step 5 without resolving it.** Common causes and fixes:
 
-- **Audio shorter than planned (most common with Kokoro):** Kokoro generates compressed speech with minimal pauses. Proportionally scale all non-CTA beat durations down to match the real audio. Example: planned 30s, audio 19s — multiply each beat duration by 19/30 (excluding the CTA hold). Update STORYBOARD.md.
+- **Audio shorter than planned:** TTS engines commonly generate compressed speech with minimal pauses. Proportionally scale all non-CTA beat durations down to match the real audio. Example: planned 30s, audio 19s — multiply each beat duration by 19/30 (excluding the CTA hold). Update STORYBOARD.md.
 - **Audio much longer than planned (>30% over):** The script was too long for the intended duration. Trim the script (remove one beat's VO), regenerate audio, re-transcribe.
 - **CTA beat timing:** The CTA beat should hold for 2–3 seconds after the last spoken word — not extend to fill empty time. `cta_start = last_word.end + 0.3s`, `cta_duration = 2.5s`. Hard cap. Dead silence after the CTA hold loses the viewer.
 
