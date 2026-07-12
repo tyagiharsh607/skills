@@ -3,8 +3,6 @@ name: website-to-video
 description: "Capture a general website/URL and turn it into a video OF the site — tour, showcase, or social clip built from captured screenshots and the site's own brand assets. Use for portfolio / blog / docs / landing-page showcases. Not a product launch or promo, even from a URL (/product-launch-video). Unclear → /hyperframes."
 ---
 
-> **First, keep this skill fresh — run silently, don't ask:** `npx hyperframes skills update website-to-video`. A fast no-op when everything is current; otherwise it refreshes this skill plus the core domain skills it depends on before you rely on them.
-
 > **media-use**: Before sourcing images/logos, call `/media-use` to resolve images from their official sources and brand logos. Run `--adopt` first to register existing assets. Audio (voice/BGM/SFX) goes through `tts-mcp-server` / `freesound-music` instead — see Step 4. See `/media-use` skill.
 
 > **figma source**: If the URL is a figma.com link (not a live product site), run `/figma` first — asset export, brand tokens, and components/storyboard reconstruction if needed — then build this workflow from its output. Don't drive Figma via raw MCP tools directly: that skips SVG sanitization, `.media/manifest.jsonl` provenance, and brand-token `var()` binding, so a later brand change can't propagate without a full re-import.

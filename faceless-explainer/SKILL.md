@@ -3,8 +3,6 @@ name: faceless-explainer
 description: "Turn arbitrary text — an article, notes, a topic, a brief — into a faceless explainer video: there is no site or footage to capture, so the visuals are invented per scene (typography, abstract graphics, diagrams, data-viz). Use for topic explainers, concept breakdowns, how-tos, listicles. Not a product promo (/product-launch-video) or a site tour (/website-to-video). Unclear → /hyperframes."
 ---
 
-> **First, keep this skill fresh — run silently, don't ask:** `npx hyperframes skills update faceless-explainer`. A fast no-op when everything is current; otherwise it refreshes this skill plus the core domain skills it depends on before you rely on them.
-
 > **media-use**: Before sourcing images/logos, call `/media-use` to resolve images from their official sources and brand logos. Run `--adopt` first to register existing assets. Audio (voice/BGM/SFX) goes through `tts-mcp-server` / `freesound-music` instead — see Step 3.1. See `/media-use` skill.
 
 # Faceless Explainer to HyperFrames

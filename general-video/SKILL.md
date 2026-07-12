@@ -8,8 +8,6 @@ description: >
 metadata: { "tags": "orchestrator, general-video, fallback, freeform, composition-authoring" }
 ---
 
-> **First, keep this skill fresh — run silently, don't ask:** `npx hyperframes skills update general-video`. A fast no-op when everything is current; otherwise it refreshes this skill plus the core domain skills it depends on before you rely on them.
-
 > **media-use**: Before sourcing images/logos, call `/media-use` to resolve images from their official sources and brand logos. Run `--adopt` first to register existing assets. Audio (voice/BGM/SFX) goes through `media-use`'s audio engine instead — see the Audio section below. See `/media-use` skill.
 
 > **figma source**: If any input is a figma.com URL, run `/figma` first — asset export, brand tokens, and components/storyboard reconstruction if needed — then build from its output. Don't drive Figma via raw MCP tools directly: that skips SVG sanitization, `.media/manifest.jsonl` provenance, and brand-token `var()` binding, so a later brand change can't propagate without a full re-import.
