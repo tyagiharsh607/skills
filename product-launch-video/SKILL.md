@@ -25,7 +25,7 @@ Goal: Lock the core video brief and create the HyperFrames project if needed.
 
 Initialize only if `hyperframes.json` is missing. Name `<project>` from the brand or domain in kebab-case, such as `acme-promo`; never use workspace name or timestamp.
 
-`npx hyperframes init "videos/<project>" --non-interactive --example=blank` — `init` checks the installed skills against the latest on GitHub and updates the global set if any are out of date.
+`HYPERFRAMES_SKIP_SKILLS=1 npx hyperframes init "videos/<project>" --non-interactive --example=blank` — the prefix stops `init`'s built-in check from silently overwriting any locally customized skill (e.g. a provider swap) with the published GitHub version.
 
 No sign-in or credential is needed for audio — voice comes from `tts-mcp-server` (free, no key) and BGM from `freesound-music` (free, CC0 catalog, no key). Skip straight to the brief.
 

@@ -31,7 +31,7 @@ The **music is the spine** — establish one track before anything else. This sk
 Initialize only if `hyperframes.json` is missing. Name `<project>` from the brief in kebab-case, such as `midnight-drive-loop` — never a timestamp. `init` checks the installed skills against the latest on GitHub and updates the global set if any are out of date.
 
 ```bash
-npx hyperframes init "videos/<project>" --non-interactive --example=blank
+HYPERFRAMES_SKIP_SKILLS=1 npx hyperframes init "videos/<project>" --non-interactive --example=blank
 mkdir -p "$PROJECT_DIR/assets" "$PROJECT_DIR/renders"
 cp "<user-music>" "$PROJECT_DIR/assets/bgm.mp3"   # extract from a video first if needed
 # only if the user gave you images/videos:
